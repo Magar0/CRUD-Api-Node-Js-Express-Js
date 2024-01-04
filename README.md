@@ -19,4 +19,5 @@ To run the test cases.
 ## Documentation API:
 #### Endpoints
 /api/notes : GET/POST
+
 /api/notes : PUT/DELETE
