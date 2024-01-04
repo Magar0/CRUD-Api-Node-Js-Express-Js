@@ -16,11 +16,6 @@ To start your server
 #### npm run test
 To run the test cases.
 
-## Documentation API:
-#### Endpoints
-/api/notes : GET/POST
-
-/api/notes/:id : PUT/DELETE
 
 # API Endpoints
 
