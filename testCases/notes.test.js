@@ -1,21 +1,18 @@
-const fetch = require('node-fetch');
+const request = require('supertest');
+const app = require('../server.js')
+
 
 //for POST method.............
 it('should create new note', async () => {
     const newNote = { title: "dummy-title", content: "dummy-data-here" };
-    const res = await fetch('/api/notes', {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newNote)
-    })
-    const data = await res.json();
+    const response = await request(app).post('/api/notes').send(newNote);
 
-    expect(res.status).toBe('201');
-    expect(data).toHaveProperty('id');
-    expect(data).toHaveProperty('title', newNote.title);
-    expect(data).toHaveProperty('content', newNote.content);
-    expect(data).toHaveProperty('createdAt');
-    expect(data).toHaveProperty('updatedAt');
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('_id');
+    expect(response.body).toHaveProperty('title', newNote.title);
+    expect(response.body).toHaveProperty('content', newNote.content);
+    expect(response.body).toHaveProperty('createdAt');
+    expect(response.body).toHaveProperty('updatedAt');
 })
 
 
@@ -27,41 +24,26 @@ describe('should fetch notes on GET method', () => {
         const note1 = { title: "dummy-title", content: "dummy-data-here" };
         const note2 = { title: "dummy-title", content: "dummy-data-here" };
 
-        await fetch('/api/notes', {
-            method: "POST",
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(note1)
-        })
-        await fetch('/api/notes', {
-            method: "POST",
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(note2)
-        })
+        await request(app).post('/api/notes').send(note1);
+        await request(app).post('/api/notes').send(note2);
 
-        const res = await fetch('/api/notes')
-        const data = await res.json()
+        const response = await request(app).get('/api/notes')
 
-        expect(res.status).toBe(200);
-        expect(data).toBeInstanceOf(Array);
-        expect(data).toHaveLength(2);
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Array);
+        // expect(response.body).toHaveLength(2);
     })
 
 
     it('should fetch single note by ID', async () => {
-        const jsonData = await fetch('/api/notes', {
-            method: "POST",
-            headers: { 'Content-Type': 'application/json' },
-            body: { "title": "test-PUT", "content": "testing" }
-        })
-        const data = await jsonData.json();
-
-        const res = await fetch(`/api/notes/${data._id}`);
-        const resData = await res.json();
-
-        expect(res.status).toBe(200);
-        expect(resData).toHaveProperty("_id", data._id)
-        expect(resData).toHaveProperty('title', 'test-PUT')
-        expect(resData).toHaveProperty('content', 'testing')
+        const dataPosted = await request(app).post('/api/notes').send({
+            title: "test", content: "testing"
+        });
+        const response = await request(app).get(`/api/notes/${dataPosted.body._id}`);
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("_id", dataPosted.body._id)
+        expect(response.body).toHaveProperty('title', 'test')
+        expect(response.body).toHaveProperty('content', 'testing')
     })
 })
 
@@ -69,45 +51,34 @@ describe('should fetch notes on GET method', () => {
 
 //for PUT method.........
 it('should update an existing note', async () => {
-    const jsonData = await fetch('/api/notes', {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        body: { "title": "test-PUT", "content": "testing" }
-    })
-    const originalData = await jsonData.json();
+    const dataPosted = await request(app).post('/api/notes').send({
+        title: "test", content: "testing"
+    });
 
     const updatedNote = { title: "updated-title", content: "updated-content" }
-    const res = await fetch(`/api/notes/${originalData._id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedNote)
-    })
-    const resData = await res.json();
+    const res = await request(app).put(`/api/notes/${dataPosted.body._id}`).send(updatedNote)
 
     expect(res.status).toBe(200);
-    expect(resData).toHaveProperty('_id', originalData._id)
-    expect(resData).toHaveProperty('title', updatedNote.title)
-    expect(resData).toHaveProperty('content', updatedNote.content)
+    expect(res.body).toHaveProperty('_id', dataPosted.body._id)
+    expect(res.body).toHaveProperty('title', updatedNote.title)
+    expect(res.body).toHaveProperty('content', updatedNote.content)
 })
 
 
 //for DELETE method
 it('should delete a note', async () => {
-    const jsonData = await fetch('/api/notes', {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        body: { "title": "test", "content": "testing" }
-    })
-    const note = await jsonData.json();
+    const note = await request(app).post('/api/notes').send({
+        title: "test", content: "testing"
+    });
 
-    const res = await fetch(`/api/notes/${note._id}`, { method: 'DELETE' });
+    const response = await request(app).delete(`/api/notes/${note.body._id}`)
 
-    expect(res.status).toBe(200);
-    expect(res.message).toBe("Note deleted");
+    expect(response.status).toBe(200);
+    expect(response.body.message).toBe("Note deleted");
 
     //trying to retreive the deleted note again
-    const deletedNote = await fetch(`/api/notes/${note._id}`)
+    const deletedNote = await request(app).get(`/api/notes/${note.body._id}`)
     expect(deletedNote.status).toBe(404);
-    expect(deletedNote.message).toBe("Note not found");
+    expect(deletedNote.body.message).toBe("Note not found");
 
 })

@@ -27,3 +27,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
     console.log("app is listening on port no", PORT);
 })
+
+module.exports = app;
